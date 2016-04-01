@@ -1,4 +1,4 @@
-Pocker
+Pocker [![Build Status](https://travis-ci.org/selimekizoglu/pocker.svg?branch=master)](https://travis-ci.org/selimekizoglu/pocker)
 ===============
 
 Post-deployment testing consul services.
