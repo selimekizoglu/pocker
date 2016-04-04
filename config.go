@@ -9,10 +9,14 @@ type Config struct {
 
 	// Endpoint is the endpoint of the service to ve poked
 	Endpoint string
+
+	// Expect is the number of registered service instances
+	Expect int
 }
 
 func DefaultConfig() *Config {
 	return &Config{
 		Consul: "localhost:8500",
+		Expect: 1,
 	}
 }

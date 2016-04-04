@@ -87,3 +87,13 @@ func TestParseFlags_noEndpoint(t *testing.T) {
 		t.Errorf("expected %q to be %q", config.Endpoint, expected)
 	}
 }
+
+func TestParseFlags_expect(t *testing.T) {
+	cli := NewCLI()
+	_, err := cli.parseFlags([]string{
+		"-expect", "3",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}

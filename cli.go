@@ -33,6 +33,7 @@ func (cli *CLI) parseFlags(args []string) (*Config, error) {
 	consul := flags.String("consul", "localhost", "")
 	service := flags.String("service", "", "")
 	endpoint := flags.String("endpoint", "/", "")
+	expect := flags.Int("expect", 1, "")
 
 	if err := flags.Parse(args); err != nil {
 		return nil, err
@@ -42,6 +43,7 @@ func (cli *CLI) parseFlags(args []string) (*Config, error) {
 		Consul:   *consul,
 		Service:  *service,
 		Endpoint: *endpoint,
+		Expect:   *expect,
 	}
 
 	return config, nil

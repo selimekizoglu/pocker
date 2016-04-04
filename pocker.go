@@ -44,7 +44,8 @@ func (p *Pocker) Poke() int {
 		return ExitCodeConsulError
 	}
 
-	if len(services) == 0 {
+	numServices := len(services)
+	if numServices != p.Config.Expect {
 		return ExitCodeFail
 	}
 

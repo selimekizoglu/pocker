@@ -7,24 +7,11 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"reflect"
 	"strings"
 	"testing"
 )
 
-func TestPocker(t *testing.T) {
-	config := DefaultConfig()
-	pocker := NewPocker(config)
-	if !reflect.DeepEqual(pocker.Config, config) {
-		t.Error("expected config to be equal to defaultConfig")
-	}
-
-	if pocker.Client == nil {
-		t.Error("expected client to be non nil")
-	}
-}
-
-func TestPoke_ok(t *testing.T) {
+func TestPoke_healthyService(t *testing.T) {
 	consul := testConsul(t)
 	defer consul.Stop()
 
@@ -44,7 +31,7 @@ func TestPoke_ok(t *testing.T) {
 	}
 }
 
-func TestPoke_fail(t *testing.T) {
+func TestPoke_unhealthyService(t *testing.T) {
 	consul := testConsul(t)
 	defer consul.Stop()
 
@@ -64,7 +51,7 @@ func TestPoke_fail(t *testing.T) {
 	}
 }
 
-func TestPoke_failUnknownService(t *testing.T) {
+func TestPoke_noSuchService(t *testing.T) {
 	consul := testConsul(t)
 	defer consul.Stop()
 
@@ -84,7 +71,7 @@ func TestPoke_failUnknownService(t *testing.T) {
 	}
 }
 
-func TestPoke_failEmptyService(t *testing.T) {
+func TestPoke_emptyService(t *testing.T) {
 	consul := testConsul(t)
 	defer consul.Stop()
 
@@ -101,6 +88,27 @@ func TestPoke_failEmptyService(t *testing.T) {
 	status := pocker.Poke()
 	if status != ExitCodeConsulError {
 		t.Errorf("expected ConsulFail but got %d", status)
+	}
+}
+
+func TestPoke_badExpect(t *testing.T) {
+	consul := testConsul(t)
+	defer consul.Stop()
+
+	conf := DefaultConfig()
+	conf.Consul = consul.HTTPAddr
+	conf.Service = "healthy-service"
+	conf.Endpoint = "/health"
+	conf.Expect = 2
+
+	setupConsul(t, consul)
+	client := testHTTPClient(t, conf)
+
+	pocker := NewPocker(conf)
+	pocker.Client = client
+	status := pocker.Poke()
+	if status != ExitCodeFail {
+		t.Errorf("expected Fail but got %d", status)
 	}
 }
 
@@ -159,7 +167,7 @@ func setupConsul(t *testing.T, server *testutil.TestServer) {
 
 	agent := consul.Agent()
 	agent.ServiceRegister(&api.AgentServiceRegistration{
-		ID:      "healthy-service",
+		ID:      "healthy-service-1",
 		Name:    "healthy-service",
 		Port:    8081,
 		Address: "localhost",
