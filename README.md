@@ -16,10 +16,10 @@ Usage
 |       Option      | Description |
 | ----------------- |------------ |
 | `consul`          | The location of the consul instance (IP/FQDN with port) to query. Defaults to localhost:8500
-| `service*`         | Name of the service registered in consul.
+| `service`         | Name of the service registered in consul. Defaults to ""
 | `endpoint`        | The endpoint of the service to be poked. Defaults to "/"
-
-\* = Required parameter
+| `retry`           | Number of retries after a failing poke. Defaults to 0 (Poke once)
+| `timeout`         | Timeout of each poke retry (in milliseconds). Defaults to 0
 
 ### Examples
 The CLI interface supports all of the options detailed above.
