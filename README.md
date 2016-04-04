@@ -33,3 +33,12 @@ $ pocker -consul 127.0.0.1:8500   \
          -retry 3                 \
          -timeout 3000
 ```
+
+```shell
+$ docker run --rm selimekizoglu/pocker:latest -consul 127.0.0.1:8500   \
+                                              -service healthy-service \
+                                              -expect 5                \
+                                              -endpoint /healthcheck   \
+                                              -retry 3                 \
+                                              -timeout 3000
+```
