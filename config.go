@@ -1,5 +1,9 @@
 package main
 
+import (
+	"github.com/selimekizoglu/gotry"
+)
+
 type Config struct {
 	// Consul is the address of the consul instance to query
 	Consul string
@@ -12,6 +16,9 @@ type Config struct {
 
 	// Expect is the number of registered service instances
 	Expect int
+
+	//Retry is the number of retries to poke a service in case of failure
+	Retry *gotry.Retry
 }
 
 func DefaultConfig() *Config {

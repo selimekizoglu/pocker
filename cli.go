@@ -2,7 +2,9 @@ package main
 
 import (
 	"flag"
+	"github.com/selimekizoglu/gotry"
 	"log"
+	"time"
 )
 
 type PockerConfigCallback func(*Config)
@@ -23,7 +25,9 @@ func (cli *CLI) Run(args []string) int {
 	}
 
 	pocker := NewPocker(conf)
-	return pocker.Poke()
+	exitCode, _ := pocker.Poke()
+
+	return exitCode
 }
 
 // parseFlags is a helper function for parsing command line flags
@@ -34,6 +38,8 @@ func (cli *CLI) parseFlags(args []string) (*Config, error) {
 	service := flags.String("service", "", "")
 	endpoint := flags.String("endpoint", "/", "")
 	expect := flags.Int("expect", 1, "")
+	retry := flags.Int("retry", 0, "")
+	timeout := flags.Int("timeout", 0, "")
 
 	if err := flags.Parse(args); err != nil {
 		return nil, err
@@ -44,6 +50,10 @@ func (cli *CLI) parseFlags(args []string) (*Config, error) {
 		Service:  *service,
 		Endpoint: *endpoint,
 		Expect:   *expect,
+		Retry: &gotry.Retry{
+			Max:     uint(*retry),
+			Timeout: time.Duration(*timeout) * time.Millisecond,
+		},
 	}
 
 	return config, nil

@@ -90,8 +90,23 @@ func TestParseFlags_noEndpoint(t *testing.T) {
 
 func TestParseFlags_expect(t *testing.T) {
 	cli := NewCLI()
-	_, err := cli.parseFlags([]string{
+	config, err := cli.parseFlags([]string{
 		"-expect", "3",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := 3
+	if config.Expect != expected {
+		t.Errorf("expected %d to be %d", config.Expect, expected)
+	}
+}
+
+func TestParseFlags_retry(t *testing.T) {
+	cli := NewCLI()
+	_, err := cli.parseFlags([]string{
+		"-retry", "3",
 	})
 	if err != nil {
 		t.Fatal(err)

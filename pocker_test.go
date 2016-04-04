@@ -4,28 +4,36 @@ import (
 	"fmt"
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/testutil"
+	"github.com/selimekizoglu/gotry"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestPoke_healthyService(t *testing.T) {
 	consul := testConsul(t)
 	defer consul.Stop()
 
-	conf := DefaultConfig()
-	conf.Consul = consul.HTTPAddr
-	conf.Service = "healthy-service"
-	conf.Endpoint = "/health"
-
-	setupConsul(t, consul)
+	conf := &Config{
+		Consul:   consul.HTTPAddr,
+		Service:  "healthy-service",
+		Endpoint: "/health",
+		Expect:   1,
+		Retry:    &gotry.Retry{},
+	}
 	client := testHTTPClient(t, conf)
+	setupConsul(t, consul)
 
 	pocker := NewPocker(conf)
 	pocker.Client = client
-	status := pocker.Poke()
+	status, err := pocker.Poke()
+
+	if err != nil {
+		t.Fatal(err)
+	}
 	if status != ExitCodeOK {
 		t.Errorf("expected OK but got %d", status)
 	}
@@ -35,17 +43,23 @@ func TestPoke_unhealthyService(t *testing.T) {
 	consul := testConsul(t)
 	defer consul.Stop()
 
-	conf := DefaultConfig()
-	conf.Consul = consul.HTTPAddr
-	conf.Service = "unhealthy-service"
-	conf.Endpoint = "/health"
-
-	setupConsul(t, consul)
+	conf := &Config{
+		Consul:   consul.HTTPAddr,
+		Service:  "unhealthy-service",
+		Endpoint: "/health",
+		Expect:   2,
+		Retry:    &gotry.Retry{},
+	}
 	client := testHTTPClient(t, conf)
+	setupConsul(t, consul)
 
 	pocker := NewPocker(conf)
 	pocker.Client = client
-	status := pocker.Poke()
+	status, err := pocker.Poke()
+
+	if err == nil {
+		t.Error("expected error")
+	}
 	if status != ExitCodeFail {
 		t.Errorf("expected Fail but got %d", status)
 	}
@@ -55,17 +69,23 @@ func TestPoke_noSuchService(t *testing.T) {
 	consul := testConsul(t)
 	defer consul.Stop()
 
-	conf := DefaultConfig()
-	conf.Consul = consul.HTTPAddr
-	conf.Service = "unknown-service"
-	conf.Endpoint = "/health"
-
-	setupConsul(t, consul)
+	conf := &Config{
+		Consul:   consul.HTTPAddr,
+		Service:  "unknown-service",
+		Endpoint: "/health",
+		Expect:   1,
+		Retry:    &gotry.Retry{},
+	}
 	client := testHTTPClient(t, conf)
+	setupConsul(t, consul)
 
 	pocker := NewPocker(conf)
 	pocker.Client = client
-	status := pocker.Poke()
+	status, err := pocker.Poke()
+
+	if err == nil {
+		t.Error("expected error")
+	}
 	if status != ExitCodeFail {
 		t.Errorf("expected ConsulFail but got %d", status)
 	}
@@ -75,17 +95,23 @@ func TestPoke_emptyService(t *testing.T) {
 	consul := testConsul(t)
 	defer consul.Stop()
 
-	conf := DefaultConfig()
-	conf.Consul = consul.HTTPAddr
-	conf.Service = ""
-	conf.Endpoint = "/health"
-
-	setupConsul(t, consul)
+	conf := &Config{
+		Consul:   consul.HTTPAddr,
+		Service:  "",
+		Endpoint: "/health",
+		Expect:   1,
+		Retry:    &gotry.Retry{},
+	}
 	client := testHTTPClient(t, conf)
+	setupConsul(t, consul)
 
 	pocker := NewPocker(conf)
 	pocker.Client = client
-	status := pocker.Poke()
+	status, err := pocker.Poke()
+
+	if err == nil {
+		t.Error("expected error")
+	}
 	if status != ExitCodeConsulError {
 		t.Errorf("expected ConsulFail but got %d", status)
 	}
@@ -95,33 +121,75 @@ func TestPoke_badExpect(t *testing.T) {
 	consul := testConsul(t)
 	defer consul.Stop()
 
-	conf := DefaultConfig()
-	conf.Consul = consul.HTTPAddr
-	conf.Service = "healthy-service"
-	conf.Endpoint = "/health"
-	conf.Expect = 2
-
-	setupConsul(t, consul)
+	conf := &Config{
+		Consul:   consul.HTTPAddr,
+		Service:  "healthy-service",
+		Endpoint: "/health",
+		Expect:   2,
+		Retry:    &gotry.Retry{},
+	}
 	client := testHTTPClient(t, conf)
+	setupConsul(t, consul)
 
 	pocker := NewPocker(conf)
 	pocker.Client = client
-	status := pocker.Poke()
+	status, err := pocker.Poke()
+
+	if err == nil {
+		t.Error("expected error")
+	}
 	if status != ExitCodeFail {
 		t.Errorf("expected Fail but got %d", status)
 	}
 }
 
-func TestRun_consulError(t *testing.T) {
-	conf := DefaultConfig()
-	conf.Service = "healthy-service"
-	conf.Endpoint = "/health"
+func TestPoke_retry(t *testing.T) {
+	consul := testConsul(t)
+	defer consul.Stop()
 
+	conf := &Config{
+		Consul:   consul.HTTPAddr,
+		Service:  "another-unhealthy-service",
+		Endpoint: "/health",
+		Expect:   1,
+		Retry:    &gotry.Retry{Max: 1, Timeout: 2 * time.Second},
+	}
+	client := testHTTPClient(t, conf)
+	setupConsul(t, consul)
+
+	pocker := NewPocker(conf)
+	pocker.Client = client
+
+	start := time.Now()
+	status, err := pocker.Poke()
+
+	if err == nil {
+		t.Error("expected error")
+	}
+	if status != ExitCodeFail {
+		t.Errorf("expected Fail but got %d", status)
+	}
+
+	diff := time.Now().Sub(start)
+	if diff < conf.Retry.Timeout {
+		t.Errorf("expected %s to be less than %s after retry", diff, conf.Retry.Timeout)
+	}
+}
+
+func TestRun_consulError(t *testing.T) {
+	conf := &Config{
+		Service:  "healthy-service",
+		Endpoint: "/health",
+	}
 	client := testHTTPClient(t, conf)
 
 	pocker := NewPocker(conf)
 	pocker.Client = client
-	status := pocker.Poke()
+	status, err := pocker.Poke()
+
+	if err == nil {
+		t.Error("expected error")
+	}
 	if status != ExitCodeConsulError {
 		t.Errorf("expected ConsulError exit code but got %d", status)
 	}
@@ -184,7 +252,12 @@ func setupConsul(t *testing.T, server *testutil.TestServer) {
 		Port:    8083,
 		Address: "localhost",
 	})
-
+	agent.ServiceRegister(&api.AgentServiceRegistration{
+		ID:      "another-unhealthy-service-1",
+		Name:    "another-unhealthy-service",
+		Port:    8084,
+		Address: "localhost",
+	})
 }
 
 func testHTTPClient(t *testing.T, conf *Config) *http.Client {
