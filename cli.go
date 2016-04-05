@@ -50,8 +50,8 @@ func (cli *CLI) parseFlags(args []string) (*Config, error) {
 		Service:  *service,
 		Endpoint: *endpoint,
 		Expect:   *expect,
-		Retry: &gotry.Retry{
-			Max:     uint(*retry),
+		Retry: gotry.Retry{
+			Max:     *retry,
 			Timeout: time.Duration(*timeout) * time.Millisecond,
 		},
 	}

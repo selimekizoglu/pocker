@@ -18,7 +18,7 @@ type Config struct {
 	Expect int
 
 	//Retry is the number of retries to poke a service in case of failure
-	Retry *gotry.Retry
+	Retry gotry.Retry
 }
 
 func DefaultConfig() *Config {

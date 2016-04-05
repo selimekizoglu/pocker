@@ -22,7 +22,7 @@ func TestPoke_healthyService(t *testing.T) {
 		Service:  "healthy-service",
 		Endpoint: "/health",
 		Expect:   1,
-		Retry:    &gotry.Retry{},
+		Retry:    gotry.Retry{},
 	}
 	client := testHTTPClient(t, conf)
 	setupConsul(t, consul)
@@ -48,7 +48,7 @@ func TestPoke_unhealthyService(t *testing.T) {
 		Service:  "unhealthy-service",
 		Endpoint: "/health",
 		Expect:   2,
-		Retry:    &gotry.Retry{},
+		Retry:    gotry.Retry{},
 	}
 	client := testHTTPClient(t, conf)
 	setupConsul(t, consul)
@@ -74,7 +74,7 @@ func TestPoke_noSuchService(t *testing.T) {
 		Service:  "unknown-service",
 		Endpoint: "/health",
 		Expect:   1,
-		Retry:    &gotry.Retry{},
+		Retry:    gotry.Retry{},
 	}
 	client := testHTTPClient(t, conf)
 	setupConsul(t, consul)
@@ -100,33 +100,7 @@ func TestPoke_emptyService(t *testing.T) {
 		Service:  "",
 		Endpoint: "/health",
 		Expect:   1,
-		Retry:    &gotry.Retry{},
-	}
-	client := testHTTPClient(t, conf)
-	setupConsul(t, consul)
-
-	pocker := NewPocker(conf)
-	pocker.Client = client
-	status, err := pocker.Poke()
-
-	if err == nil {
-		t.Error("expected error")
-	}
-	if status != ExitCodeConsulError {
-		t.Errorf("expected ConsulFail but got %d", status)
-	}
-}
-
-func TestPoke_badExpect(t *testing.T) {
-	consul := testConsul(t)
-	defer consul.Stop()
-
-	conf := &Config{
-		Consul:   consul.HTTPAddr,
-		Service:  "healthy-service",
-		Endpoint: "/health",
-		Expect:   2,
-		Retry:    &gotry.Retry{},
+		Retry:    gotry.Retry{},
 	}
 	client := testHTTPClient(t, conf)
 	setupConsul(t, consul)
@@ -143,7 +117,33 @@ func TestPoke_badExpect(t *testing.T) {
 	}
 }
 
-func TestPoke_retry(t *testing.T) {
+func TestPoke_badExpect(t *testing.T) {
+	consul := testConsul(t)
+	defer consul.Stop()
+
+	conf := &Config{
+		Consul:   consul.HTTPAddr,
+		Service:  "healthy-service",
+		Endpoint: "/health",
+		Expect:   2,
+		Retry:    gotry.Retry{},
+	}
+	client := testHTTPClient(t, conf)
+	setupConsul(t, consul)
+
+	pocker := NewPocker(conf)
+	pocker.Client = client
+	status, err := pocker.Poke()
+
+	if err == nil {
+		t.Error("expected error")
+	}
+	if status != ExitCodeFail {
+		t.Errorf("expected Fail but got %d", status)
+	}
+}
+
+func TestPoke_retryServiceCheck(t *testing.T) {
 	consul := testConsul(t)
 	defer consul.Stop()
 
@@ -152,7 +152,7 @@ func TestPoke_retry(t *testing.T) {
 		Service:  "another-unhealthy-service",
 		Endpoint: "/health",
 		Expect:   1,
-		Retry:    &gotry.Retry{Max: 1, Timeout: 2 * time.Second},
+		Retry:    gotry.Retry{Max: 1, Timeout: 2 * time.Second},
 	}
 	client := testHTTPClient(t, conf)
 	setupConsul(t, consul)
@@ -172,26 +172,60 @@ func TestPoke_retry(t *testing.T) {
 
 	diff := time.Now().Sub(start)
 	if diff < conf.Retry.Timeout {
-		t.Errorf("expected %s to be less than %s after retry", diff, conf.Retry.Timeout)
+		t.Errorf("expected %s to be greater than %s after retry", diff, conf.Retry.Timeout)
 	}
 }
 
-func TestRun_consulError(t *testing.T) {
+func TestPoke_restryExpect(t *testing.T) {
+	consul := testConsul(t)
+	defer consul.Stop()
+
 	conf := &Config{
-		Service:  "healthy-service",
+		Consul:   consul.HTTPAddr,
+		Service:  "unhealthy-service",
 		Endpoint: "/health",
+		Expect:   3,
+		Retry:    gotry.Retry{Max: 1, Timeout: 2 * time.Second},
 	}
 	client := testHTTPClient(t, conf)
+	setupConsul(t, consul)
 
 	pocker := NewPocker(conf)
 	pocker.Client = client
+
+	start := time.Now()
 	status, err := pocker.Poke()
 
 	if err == nil {
 		t.Error("expected error")
 	}
-	if status != ExitCodeConsulError {
-		t.Errorf("expected ConsulError exit code but got %d", status)
+	if status != ExitCodeFail {
+		t.Errorf("expected Fail but got %d", status)
+	}
+
+	diff := time.Now().Sub(start)
+	if diff < conf.Retry.Timeout {
+		t.Errorf("expected %s to be greater than %s after retry", diff, conf.Retry.Timeout)
+	}
+}
+
+func TestRun_badConsul(t *testing.T) {
+	conf := &Config{
+		Service:  "healthy-service",
+		Endpoint: "/health",
+		Retry:    gotry.Retry{Max: 1, Timeout: 2 * time.Second},
+	}
+	client := testHTTPClient(t, conf)
+
+	pocker := NewPocker(conf)
+	pocker.Client = client
+
+	status, err := pocker.Poke()
+	if err == nil {
+		t.Error("expected error")
+	}
+	if status != ExitCodeFail {
+		t.Errorf("expected Fail exit code but got %d", status)
 	}
 }
 
