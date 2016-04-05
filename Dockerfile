@@ -8,6 +8,7 @@ RUN echo http://dl-4.alpinelinux.org/alpine/edge/community >> /etc/apk/repositor
     cp /src/* src/github.com/selimekizoglu/pocker && \
     cd src/github.com/selimekizoglu/pocker && \
     go get -v -d && \
+    go test -v && \
     go build -o /bin/pocker && \
     apk del git && \
     rm -rf /go && \
