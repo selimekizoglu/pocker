@@ -69,12 +69,12 @@ func (p *Pocker) Poke() (int, error) {
 		err := gotry.Try(func() error {
 			log.Printf("Poking %s", url)
 			resp, err := p.Client.Get(url)
-			defer resp.Body.Close()
-
 			if err != nil {
 				log.Print(err)
 				return err
 			}
+			defer resp.Body.Close()
+
 			if resp.StatusCode > 399 {
 				err = fmt.Errorf("Response has status code: %d", resp.StatusCode)
 				log.Print(err)

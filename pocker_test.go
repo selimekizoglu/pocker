@@ -238,7 +238,7 @@ func (s *FakeService) RoundTrip(req *http.Request) (*http.Response, error) {
 	log.Printf("Fakeservice handling %s", req.URL)
 	statusCode, ok := s.StatusCodes[url.String()]
 	if !ok {
-		statusCode = http.StatusNotFound
+		return nil, fmt.Errorf("service unreachable")
 	}
 
 	body := ioutil.NopCloser(strings.NewReader(""))
