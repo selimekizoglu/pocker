@@ -18,11 +18,12 @@ func TestPoke_healthyService(t *testing.T) {
 	defer consul.Stop()
 
 	conf := &Config{
-		Consul:   consul.HTTPAddr,
-		Service:  "healthy-service",
-		Endpoint: "/health",
-		Expect:   1,
-		Retry:    gotry.Retry{},
+		Consul:        consul.HTTPAddr,
+		Service:       "healthy-service",
+		Endpoint:      "/health",
+		Expect:        1,
+		ExpectAtLeast: 1,
+		Retry:         gotry.Retry{},
 	}
 	client := testHTTPClient(t, conf)
 	setupConsul(t, consul)
@@ -44,11 +45,12 @@ func TestPoke_unhealthyService(t *testing.T) {
 	defer consul.Stop()
 
 	conf := &Config{
-		Consul:   consul.HTTPAddr,
-		Service:  "unhealthy-service",
-		Endpoint: "/health",
-		Expect:   2,
-		Retry:    gotry.Retry{},
+		Consul:        consul.HTTPAddr,
+		Service:       "unhealthy-service",
+		Endpoint:      "/health",
+		Expect:        2,
+		ExpectAtLeast: 1,
+		Retry:         gotry.Retry{},
 	}
 	client := testHTTPClient(t, conf)
 	setupConsul(t, consul)
@@ -70,11 +72,12 @@ func TestPoke_noSuchService(t *testing.T) {
 	defer consul.Stop()
 
 	conf := &Config{
-		Consul:   consul.HTTPAddr,
-		Service:  "unknown-service",
-		Endpoint: "/health",
-		Expect:   1,
-		Retry:    gotry.Retry{},
+		Consul:        consul.HTTPAddr,
+		Service:       "unknown-service",
+		Endpoint:      "/health",
+		Expect:        1,
+		ExpectAtLeast: 1,
+		Retry:         gotry.Retry{},
 	}
 	client := testHTTPClient(t, conf)
 	setupConsul(t, consul)
@@ -96,11 +99,12 @@ func TestPoke_emptyService(t *testing.T) {
 	defer consul.Stop()
 
 	conf := &Config{
-		Consul:   consul.HTTPAddr,
-		Service:  "",
-		Endpoint: "/health",
-		Expect:   1,
-		Retry:    gotry.Retry{},
+		Consul:        consul.HTTPAddr,
+		Service:       "",
+		Endpoint:      "/health",
+		Expect:        1,
+		ExpectAtLeast: 1,
+		Retry:         gotry.Retry{},
 	}
 	client := testHTTPClient(t, conf)
 	setupConsul(t, consul)
@@ -122,11 +126,12 @@ func TestPoke_badExpect(t *testing.T) {
 	defer consul.Stop()
 
 	conf := &Config{
-		Consul:   consul.HTTPAddr,
-		Service:  "healthy-service",
-		Endpoint: "/health",
-		Expect:   2,
-		Retry:    gotry.Retry{},
+		Consul:        consul.HTTPAddr,
+		Service:       "healthy-service",
+		Endpoint:      "/health",
+		Expect:        2,
+		ExpectAtLeast: 1,
+		Retry:         gotry.Retry{},
 	}
 	client := testHTTPClient(t, conf)
 	setupConsul(t, consul)
@@ -148,11 +153,12 @@ func TestPoke_retryServiceCheck(t *testing.T) {
 	defer consul.Stop()
 
 	conf := &Config{
-		Consul:   consul.HTTPAddr,
-		Service:  "another-unhealthy-service",
-		Endpoint: "/health",
-		Expect:   1,
-		Retry:    gotry.Retry{Max: 1, Timeout: 2 * time.Second},
+		Consul:        consul.HTTPAddr,
+		Service:       "another-unhealthy-service",
+		Endpoint:      "/health",
+		Expect:        1,
+		ExpectAtLeast: 1,
+		Retry:         gotry.Retry{Max: 1, Timeout: 2 * time.Second},
 	}
 	client := testHTTPClient(t, conf)
 	setupConsul(t, consul)
@@ -181,11 +187,12 @@ func TestPoke_restryExpect(t *testing.T) {
 	defer consul.Stop()
 
 	conf := &Config{
-		Consul:   consul.HTTPAddr,
-		Service:  "unhealthy-service",
-		Endpoint: "/health",
-		Expect:   3,
-		Retry:    gotry.Retry{Max: 1, Timeout: 2 * time.Second},
+		Consul:        consul.HTTPAddr,
+		Service:       "unhealthy-service",
+		Endpoint:      "/health",
+		Expect:        3,
+		ExpectAtLeast: 1,
+		Retry:         gotry.Retry{Max: 1, Timeout: 2 * time.Second},
 	}
 	client := testHTTPClient(t, conf)
 	setupConsul(t, consul)

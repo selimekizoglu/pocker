@@ -113,8 +113,8 @@ func TestParseFlags_expectAtLeast(t *testing.T) {
 	}
 
 	expected := 4
-	if expected >= config.Expect {
-		t.Errorf("expected %d must higher than %d", expected, config.Expect)
+	if expected < config.ExpectAtLeast {
+		t.Errorf("expected %d must higher than %d", expected, config.ExpectAtLeast)
 	}
 }
 
