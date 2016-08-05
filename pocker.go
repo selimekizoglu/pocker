@@ -49,6 +49,15 @@ func (p *Pocker) Poke() (int, error) {
 			return err
 		}
 		numServices := len(services)
+		if p.Config.ExpectAtLeast != 1 {
+			if numServices >= p.Config.ExpectAtLeast {
+				return nil
+			} else {
+				err = fmt.Errorf("Expected at least %d services, but consul returned %d", p.Config.ExpectAtLeast, numServices)
+				log.Print(err)
+				return err
+			}
+		}
 		if numServices != p.Config.Expect {
 			err = fmt.Errorf("Expected %d services, but consul returned %d", p.Config.Expect, numServices)
 			log.Print(err)
