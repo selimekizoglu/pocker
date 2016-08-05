@@ -38,6 +38,7 @@ func (cli *CLI) parseFlags(args []string) (*Config, error) {
 	service := flags.String("service", "", "")
 	endpoint := flags.String("endpoint", "/", "")
 	expect := flags.Int("expect", 1, "")
+	expectAtLeast := flags.Int("expectAtLeast", 1, "")
 	retry := flags.Int("retry", 0, "")
 	timeout := flags.Int("timeout", 0, "")
 
@@ -46,10 +47,11 @@ func (cli *CLI) parseFlags(args []string) (*Config, error) {
 	}
 
 	config := &Config{
-		Consul:   *consul,
-		Service:  *service,
-		Endpoint: *endpoint,
-		Expect:   *expect,
+		Consul:        *consul,
+		Service:       *service,
+		Endpoint:      *endpoint,
+		Expect:        *expect,
+		ExpectAtLeast: *expectAtLeast,
 		Retry: gotry.Retry{
 			Max:     *retry,
 			Timeout: time.Duration(*timeout) * time.Millisecond,

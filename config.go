@@ -17,6 +17,9 @@ type Config struct {
 	// Expect is the number of registered service instances
 	Expect int
 
+	//ExpectAtLeast is the minimum number of registered service instances. Service instances can be more.
+	ExpectAtLeast int
+
 	//Retry is the number of retries to poke a service in case of failure
 	Retry gotry.Retry
 }

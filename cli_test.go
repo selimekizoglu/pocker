@@ -103,6 +103,21 @@ func TestParseFlags_expect(t *testing.T) {
 	}
 }
 
+func TestParseFlags_expectAtLeast(t *testing.T) {
+	cli := NewCLI()
+	config, err := cli.parseFlags([]string{
+		"-expectAtLeast", "3",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := 4
+	if expected < config.ExpectAtLeast {
+		t.Errorf("expected %d must higher than %d", expected, config.ExpectAtLeast)
+	}
+}
+
 func TestParseFlags_retry(t *testing.T) {
 	cli := NewCLI()
 	_, err := cli.parseFlags([]string{
